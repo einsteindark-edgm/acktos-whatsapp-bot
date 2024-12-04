@@ -2,13 +2,14 @@ name: Deploy to Azure Functions
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 env:
   AZURE_FUNCTIONAPP_NAME: whatsapp-acktos-bot
   AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
-  PYTHON_VERSION: '3.10'
+  PYTHON_VERSION: '3.9'
 
 jobs:
   build-and-deploy:
