@@ -1,0 +1,31 @@
+{
+    "object": "whatsapp_business_account",
+    "entry": [{
+        "id": "455344207657481",
+        "changes": [{
+            "value": {
+                "messaging_product": "whatsapp",
+                "metadata": {
+                    "display_phone_number": "573142399044",
+                    "phone_number_id": "471379852715548"
+                },
+                "contacts": [{
+                    "profile": {
+                        "name": "David Andres"
+                    },
+                    "wa_id": "573118878806"
+                }],
+                "messages": [{
+                    "from": "573118878806",
+                    "id": "wamid.HBgMNTczMTE4ODc4ODA2FQIAEhggOEIwNkNGOEFBN0RFOEI1QjhERUEyQjk1RTBDMEM0ODMA",
+                    "timestamp": "2024-11-05T22:16:24.000Z",
+                    "text": {
+                        "body": "*RECOGIDA 3:30AM*\n3124432509\t80795588 - DAVID ANDRES BLANCO GUTIERREZ\nDG 72F SUR # 33-64   ARBORIZADORA ALTA"
+                    },
+                    "type": "text"
+                }]
+            },
+            "field": "messages"
+        }]
+    }]
+}
