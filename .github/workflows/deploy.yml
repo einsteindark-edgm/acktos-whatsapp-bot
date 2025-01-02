@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_NAME: whatsapp-acktos-bot
+  AZURE_FUNCTIONAPP_NAME: whatsapp-acktos-bot-2025
   AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
   PYTHON_VERSION: '3.9'
 
