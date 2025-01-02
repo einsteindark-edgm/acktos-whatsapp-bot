@@ -13,9 +13,8 @@ message_handler = WhatsAppMessageHandler(connection_string)
 # Main HTTP trigger function for handling WhatsApp webhook requests
 # This endpoint handles both GET (for verification) and POST (for messages) requests
 # Updated for new deployment test - 2025-01-02
-@app.function_name(name="WhatsAppWebhook")
-# Webhook endpoint for WhatsApp messages
-@app.route(route="webhook", auth_level=func.AuthLevel.FUNCTION)
+@app.function_name(name="webhook")
+@app.route(route="webhook")
 async def whatsapp_webhook(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('WhatsApp webhook triggered')
     
