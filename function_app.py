@@ -4,7 +4,7 @@ import logging
 app = func.FunctionApp()
 
 @app.function_name(name="webhook")
-@app.route(route="webhook", methods=["GET"])
+@app.route(route="webhook", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 def webhook(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     
