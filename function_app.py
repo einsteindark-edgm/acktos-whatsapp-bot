@@ -11,48 +11,52 @@ connection_string = os.environ["COSMOSDB_CONNECTION_STRING"]
 message_handler = WhatsAppMessageHandler(connection_string)
 
 # Main HTTP trigger function for handling WhatsApp webhook requests
-# This endpoint handles both GET (for verification) and POST (for messages) requests
-# Updated for new deployment test - 2025-01-02
-@app.function_name(name="webhook")
 @app.route(route="webhook")
-async def whatsapp_webhook(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('WhatsApp webhook triggered')
-    
+def webhook(req: func.HttpRequest) -> func.HttpResponse:
+    logging.warning('WhatsApp webhook triggered')
+    logging.warning(f'Method: {req.method}')
+    logging.warning(f'URL: {req.url}')
+    logging.warning(f'Params: {req.params}')
+
     try:
-        # Handle WhatsApp verification challenge
         if req.method == "GET":
-            mode = req.params.get('hub.mode')
-            token = req.params.get('hub.verify_token')
-            challenge = req.params.get('hub.challenge')
-            
-            if mode and token:
-                if mode == 'subscribe' and token == os.environ.get('WHATSAPP_VERIFY_TOKEN'):
-                    return func.HttpResponse(challenge, status_code=200)
-                else:
-                    return func.HttpResponse('Forbidden', status_code=403)
-        
-        # Get request body
-        try:
-            body = req.get_json()
-        except ValueError:
-            return func.HttpResponse("Invalid JSON", status_code=400)
+            # Handle webhook verification
+            mode = req.params.get("hub.mode")
+            token = req.params.get("hub.verify_token")
+            challenge = req.params.get("hub.challenge")
 
-        # Process incoming message
-        parsed_message = message_handler.parse_whatsapp_message(body)
-        if not parsed_message:
-            return func.HttpResponse("Invalid message format", status_code=400)
+            logging.warning(f'Verification request - Mode: {mode}, Token: {token}, Challenge: {challenge}')
 
-        # Log the parsed message for debugging
-        logging.info(f"Parsed message: {json.dumps(parsed_message)}")
+            if mode == "subscribe" and token == os.environ["WHATSAPP_VERIFY_TOKEN"]:
+                if not challenge:
+                    return func.HttpResponse(
+                        "No challenge value provided",
+                        status_code=400
+                    )
+                return func.HttpResponse(challenge)
+            else:
+                return func.HttpResponse(
+                    "Invalid verification token",
+                    status_code=403
+                )
 
-        # Save message to Cosmos DB
-        if message_handler.save_message(parsed_message):
-            logging.info(f"Message saved successfully: {parsed_message['id']}")
-            return func.HttpResponse("Message processed successfully", status_code=200)
-        else:
-            return func.HttpResponse("Error saving message", status_code=500)
-        
+        elif req.method == "POST":
+            # Handle incoming messages
+            try:
+                body = req.get_json()
+                logging.warning(f'Received webhook data: {body}')
+                
+                # Process the message using the handler
+                message_handler.process_message(body)
+                
+                return func.HttpResponse("OK")
+            except ValueError as e:
+                logging.error(f"Error parsing request body: {str(e)}")
+                return func.HttpResponse("Invalid request body", status_code=400)
+            except Exception as e:
+                logging.error(f"Error processing message: {str(e)}")
+                return func.HttpResponse(f"Error processing message: {str(e)}", status_code=500)
     except Exception as e:
-        logging.error(f"Error processing message: {str(e)}")
-        return func.HttpResponse(f"Error processing message: {str(e)}", status_code=500)
+        logging.error(f"Unexpected error: {str(e)}")
+        return func.HttpResponse(f"Internal server error: {str(e)}", status_code=500)
 # Agregar un comentario para forzar un nuevo despliegue
