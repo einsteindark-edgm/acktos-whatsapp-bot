@@ -20,7 +20,7 @@ def webhook(req: func.HttpRequest) -> func.HttpResponse:
         logging.info(f'Verification attempt - Mode: {mode}, Token: {token}, Challenge: {challenge}')
         
         # Verify token from environment variable
-        verify_token = os.environ.get("WHATSAPP_VERIFY_TOKEN", "acktos2024")
+        verify_token = os.environ.get("WHATSAPP_VERIFY_TOKEN_WEBHOOK")
         
         if mode == "subscribe" and token == verify_token:
             if not challenge:
