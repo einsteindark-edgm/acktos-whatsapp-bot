@@ -10,8 +10,8 @@ app = func.FunctionApp()
 connection_string = os.environ.get("COSMOSDB_CONNECTION_STRING")
 message_handler = WhatsAppMessageHandler(connection_string)
 
-# Main HTTP trigger function for handling WhatsApp webhook requests
-@app.route(route="webhook")
+@app.function_name(name="webhook")
+@app.route(route="webhook", methods=["GET", "POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def webhook(req: func.HttpRequest) -> func.HttpResponse:
     logging.warning('WhatsApp webhook triggered')
     logging.warning(f'Method: {req.method}')
