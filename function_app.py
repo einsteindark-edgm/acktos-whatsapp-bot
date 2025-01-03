@@ -39,25 +39,48 @@ def webhook(req: func.HttpRequest) -> func.HttpResponse:
     
     elif req.method == "POST":
         logging.info('WhatsApp message received')
+        logging.info(f'Headers: {dict(req.headers)}')
         
         try:
+            # Get the raw body for logging
+            raw_body = req.get_body().decode()
+            logging.info(f'Raw body: {raw_body}')
+            
+            # Parse the JSON body
             body = req.get_json()
-            logging.info(f'Message body: {json.dumps(body, indent=2)}')
+            logging.info(f'Parsed body: {json.dumps(body, indent=2)}')
             
             # Extract message data
             if body.get('object') == 'whatsapp_business_account':
+                logging.info('Message is from WhatsApp Business Account')
+                
                 # Process each entry
                 for entry in body.get('entry', []):
+                    logging.info(f'Processing entry: {json.dumps(entry, indent=2)}')
+                    
                     # Process each change in the entry
                     for change in entry.get('changes', []):
+                        logging.info(f'Processing change: {json.dumps(change, indent=2)}')
+                        
                         if change.get('value', {}).get('messages'):
                             # Process each message
                             for message in change['value']['messages']:
-                                message_body = message.get('text', {}).get('body', '')
+                                message_type = message.get('type', 'unknown')
                                 from_number = message.get('from', '')
-                                logging.info(f'Message from {from_number}: {message_body}')
+                                timestamp = message.get('timestamp', '')
                                 
-                                # Here we'll add message processing logic later
+                                logging.info(f'Message details:')
+                                logging.info(f'- From: {from_number}')
+                                logging.info(f'- Type: {message_type}')
+                                logging.info(f'- Timestamp: {timestamp}')
+                                
+                                if message_type == 'text':
+                                    message_body = message.get('text', {}).get('body', '')
+                                    logging.info(f'- Body: {message_body}')
+                                else:
+                                    logging.info(f'- Full message content: {json.dumps(message, indent=2)}')
+            else:
+                logging.warning(f'Unexpected object type: {body.get("object")}')
             
             return func.HttpResponse("OK")
             
@@ -69,6 +92,7 @@ def webhook(req: func.HttpRequest) -> func.HttpResponse:
             )
         except Exception as e:
             logging.error(f"Error processing message: {str(e)}")
+            logging.exception("Full error details:")
             return func.HttpResponse(
                 f"Error processing message: {str(e)}",
                 status_code=500
