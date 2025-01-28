@@ -2,7 +2,7 @@ import azure.functions as func
 import logging
 import json
 import os
-from utils import send_whatsapp_message
+#from utils import send_whatsapp_message
 
 app = func.FunctionApp()
 
@@ -73,7 +73,7 @@ def webhook(req: func.HttpRequest) -> func.HttpResponse:
                                     
                                     # Send a response back to the sender
                                     response_message = "Recibí tu mensaje. Contenido:\n" + message_body
-                                    send_whatsapp_message(from_number, response_message)
+                                    #send_whatsapp_message(from_number, response_message)
                                 else:
                                     logging.info(f'- Full message content: {json.dumps(message, indent=2)}')
                                     
