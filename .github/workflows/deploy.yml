@@ -43,14 +43,17 @@ jobs:
         scm-do-build-during-deployment: true
         enable-oryx-build: true
 
-    - name: Check deployment logs
+    - name: Check deployment status and logs
       if: always()
       run: |
-        echo "Getting Kudu deployment logs..."
-        az webapp log deployment show --name ${{ env.AZURE_FUNCTIONAPP_NAME }} --resource-group rg-whatsapp-bot
+        echo "Getting deployment status..."
+        az functionapp show --name ${{ env.AZURE_FUNCTIONAPP_NAME }} --resource-group rg-whatsapp-bot --query state
         
-        echo "Getting function list..."
-        az functionapp function show --name ${{ env.AZURE_FUNCTIONAPP_NAME }} --resource-group rg-whatsapp-bot --function-name webhook
+        echo "Getting build logs..."
+        az functionapp deployment source show --name ${{ env.AZURE_FUNCTIONAPP_NAME }} --resource-group rg-whatsapp-bot
         
-        echo "Getting application logs..."
-        az webapp log tail --name ${{ env.AZURE_FUNCTIONAPP_NAME }} --resource-group rg-whatsapp-bot
+        echo "Getting function details..."
+        az functionapp function show --name ${{ env.AZURE_FUNCTIONAPP_NAME }} --resource-group rg-whatsapp-bot --function-name webhook || echo "Function not found"
+        
+        echo "Getting recent function invocations..."
+        az monitor app-insights query --app whatsapp-acktos-bot-2025 --analytics-query "requests | where timestamp > ago(5m) | project timestamp, name, success, resultCode, duration, operation_Name"
