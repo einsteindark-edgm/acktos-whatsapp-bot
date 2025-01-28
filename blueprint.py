@@ -2,7 +2,6 @@ import azure.functions as func
 import logging
 import json
 import os
-from utils import send_whatsapp_message
 
 bp = func.Blueprint()
 
@@ -73,7 +72,8 @@ def webhook(req: func.HttpRequest) -> func.HttpResponse:
                                     
                                     # Send a response back to the sender
                                     response_message = "Recibí tu mensaje. Contenido:\n" + message_body
-                                    send_whatsapp_message(from_number, response_message)
+                                    # Comentado temporalmente
+                                    #send_whatsapp_message(from_number, response_message)
                                 else:
                                     logging.info(f'- Full message content: {json.dumps(message, indent=2)}')
                                     
