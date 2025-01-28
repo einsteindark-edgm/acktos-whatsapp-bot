@@ -49,46 +49,10 @@ def send_whatsapp_message(to_number: str, message: str) -> bool:
         logging.error(f"Error sending message: {str(e)}")
         return False
 
-def process_incoming_message(body):
-    if body.get("object"):
-        if (
-            "entry" in body
-            and body["entry"]
-            and "changes" in body["entry"][0]
-            and body["entry"][0]["changes"]
-            and "value" in body["entry"][0]["changes"][0]
-        ):
-            value = body["entry"][0]["changes"][0]["value"]
-            
-            if (
-                "messages" in value
-                and value["messages"]
-                and len(value["messages"]) > 0
-            ):
-                for message in value["messages"]:
-                    from_number = message.get("from")
-                    message_type = message.get("type")
-                    
-                    logging.info("Message details:")
-                    logging.info(f"- From: {from_number}")
-                    logging.info(f"- Type: {message_type}")
-                    logging.info(f"- Timestamp: {message.get('timestamp')}")
-                    
-                    if message_type == 'text':
-                        message_body = message.get('text', {}).get('body', '')
-                        logging.info(f'- Body: {message_body}')
-                        
-                        # Send a response back to the sender
-                        response_message = "Recibí tu mensaje. Contenido:\n" + message_body
-                        send_whatsapp_message(from_number, response_message)
-                    else:
-                        logging.info(f'- Full message content: {json.dumps(message, indent=2)}')
-
-# Azure Function app code
 app = func.FunctionApp()
 
 @app.function_name(name="webhook")
-@app.route(route="webhook", auth_level=func.AuthLevel.ANONYMOUS)
+@app.route(route="webhook", methods=["GET", "POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def webhook(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     
@@ -123,7 +87,41 @@ def webhook(req: func.HttpRequest) -> func.HttpResponse:
             try:
                 body = req.get_json()
                 logging.info(f"Received webhook data: {json.dumps(body, indent=2)}")
-                process_incoming_message(body)
+                
+                if body.get("object"):
+                    if (
+                        "entry" in body
+                        and body["entry"]
+                        and "changes" in body["entry"][0]
+                        and body["entry"][0]["changes"]
+                        and "value" in body["entry"][0]["changes"][0]
+                    ):
+                        value = body["entry"][0]["changes"][0]["value"]
+                        
+                        if (
+                            "messages" in value
+                            and value["messages"]
+                            and len(value["messages"]) > 0
+                        ):
+                            for message in value["messages"]:
+                                from_number = message.get("from")
+                                message_type = message.get("type")
+                                
+                                logging.info("Message details:")
+                                logging.info(f"- From: {from_number}")
+                                logging.info(f"- Type: {message_type}")
+                                logging.info(f"- Timestamp: {message.get('timestamp')}")
+                                
+                                if message_type == 'text':
+                                    message_body = message.get('text', {}).get('body', '')
+                                    logging.info(f'- Body: {message_body}')
+                                    
+                                    # Send a response back to the sender
+                                    response_message = "Recibí tu mensaje. Contenido:\n" + message_body
+                                    send_whatsapp_message(from_number, response_message)
+                                else:
+                                    logging.info(f'- Full message content: {json.dumps(message, indent=2)}')
+                                    
             except ValueError as e:
                 logging.error(f"Error parsing JSON: {str(e)}")
                 return func.HttpResponse(
