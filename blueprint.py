@@ -7,7 +7,7 @@ from utils import send_whatsapp_message
 bp = func.Blueprint()
 
 @bp.function_name(name="webhook")
-@bp.route(route="webhook", methods=["GET", "POST"], auth_level=func.AuthLevel.ANONYMOUS)
+@bp.route(route="api/webhook", methods=["GET", "POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def webhook(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     
