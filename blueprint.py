@@ -62,7 +62,11 @@ def webhook(req: func.HttpRequest) -> func.HttpResponse:
                             and len(value["messages"]) > 0
                         ):
                             for message in value["messages"]:
+                                # Asegurarse de que el número esté en formato E.164
                                 from_number = message.get("from")
+                                if from_number and not from_number.startswith("+"):
+                                    from_number = "+" + from_number
+                                logging.info(f"Número formateado: {from_number}")
                                 message_type = message.get("type")
                                 
                                 logging.info("Message details:")
