@@ -35,8 +35,18 @@ def send_whatsapp_message(to_number: str, message: str) -> Dict[str, Any]:
             "text": {"body": message}
         }
         
+        # Log de la solicitud
+        logging.info(f"Enviando mensaje a WhatsApp:")
+        logging.info(f"URL: {url}")
+        logging.info(f"Headers: {headers}")
+        logging.info(f"Payload: {payload}")
+
         # Enviar mensaje
         response = requests.post(url, json=payload, headers=headers)
+        
+        # Log de la respuesta
+        logging.info(f"Respuesta de WhatsApp: {response.status_code}")
+        logging.info(f"Contenido de respuesta: {response.text}")
         response.raise_for_status()
         
         return response.json()
