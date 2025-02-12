@@ -33,6 +33,29 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Validate Azure environment settings
+      run: |
+        echo "Verificando configuración en Azure..."
+        env_vars=$(az functionapp config appsettings list \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --resource-group rg-whatsapp-bot \
+            --query "[].name" -o tsv)
+        
+        declare -a required_vars=(
+            "WHATSAPP_TOKEN"
+            "WHATSAPP_PHONE_NUMBER_ID"
+            "WHATSAPP_VERIFY_TOKEN_WEBHOOK"
+        )
+        
+        for var in "${required_vars[@]}"; do
+            if ! grep -q "$var" <<< "$env_vars"; then
+                echo "::error::Variable requerida no encontrada: $var"
+                exit 1
+            fi
+        done
+        
+        echo "Configuración validada exitosamente"
+
     - name: Deploy to Azure Functions
       id: deploy
       uses: Azure/functions-action@v1
@@ -54,6 +77,3 @@ jobs:
         
         echo "Getting function details..."
         az functionapp function show --name ${{ env.AZURE_FUNCTIONAPP_NAME }} --resource-group rg-whatsapp-bot --function-name webhook || echo "Function not found"
-        
-        echo "Getting recent function invocations..."
-        az monitor app-insights query --app whatsapp-acktos-bot-2025 --analytics-query "requests | where timestamp > ago(5m) | project timestamp, name, success, resultCode, duration, operation_Name"
