@@ -28,6 +28,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Run tests
+      run: |
+        pytest tests/ -v
+      env:
+        WHATSAPP_TOKEN: ${{ secrets.WHATSAPP_TOKEN }}
+        WHATSAPP_PHONE_NUMBER_ID: ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+        WHATSAPP_VERIFY_TOKEN_WEBHOOK: ${{ secrets.WHATSAPP_VERIFY_TOKEN_WEBHOOK }}
+
     - name: Login to Azure
       uses: azure/login@v1
       with:
