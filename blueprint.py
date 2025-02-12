@@ -9,7 +9,8 @@ bp = func.Blueprint()
 @bp.function_name(name="webhook")
 @bp.route(route="webhook", methods=["GET", "POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def webhook(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
+    logging.info(f'Python HTTP trigger function processed a {req.method} request with URL {req.url}')
+    logging.info(f'Headers: {dict(req.headers)}')
     
     try:
         if req.method == "GET":
@@ -40,7 +41,9 @@ def webhook(req: func.HttpRequest) -> func.HttpResponse:
         elif req.method == "POST":
             # Handle incoming messages
             try:
-                body = req.get_json()
+                body_text = req.get_body().decode('utf-8')
+                logging.info(f'Raw request body: {body_text}')
+                body = json.loads(body_text)
                 logging.info(f"Received webhook data: {json.dumps(body, indent=2)}")
                 
                 if body.get("object"):
