@@ -3,6 +3,12 @@ import logging
 import json
 import os
 from utils import send_whatsapp_message
+from agents.vision_agent import vision_agent
+from agents.data_extraction_agent import extraction_agent
+from agents.storage_agent import storage_agent
+from models.dependencies import VisionAgentDependencies, ExtractorAgentDependencies, StorageAgentDependencies
+from providers.vision.openai_provider import OpenAIVisionProvider
+from providers.storage.cosmosdb_provider import CosmosDBProvider
 
 bp = func.Blueprint()
 
@@ -50,7 +56,7 @@ def handle_verification(req: func.HttpRequest) -> func.HttpResponse:
             status_code=403
         )
 
-def handle_messages(req: func.HttpRequest) -> func.HttpResponse:
+async def handle_messages(req: func.HttpRequest) -> func.HttpResponse:
     """Maneja los mensajes entrantes"""
     try:
         body_text = req.get_body().decode('utf-8')
@@ -86,15 +92,75 @@ def handle_messages(req: func.HttpRequest) -> func.HttpResponse:
                         logging.info(f"- Type: {message_type}")
                         logging.info(f"- Timestamp: {message.get('timestamp')}")
                         
-                        if message_type == 'text':
+                        if message_type == 'image':
+                            try:
+                                # 1. Configurar dependencias
+                                vision_deps = VisionAgentDependencies(
+                                    vision_provider=OpenAIVisionProvider(),
+                                    model_name="gpt-4-vision-preview",
+                                    api_key=os.environ["OPENAI_API_KEY"]
+                                )
+                                
+                                storage_deps = StorageAgentDependencies(
+                                    storage_provider=CosmosDBProvider(
+                                        connection_string=os.environ["COSMOSDB_CONNECTION_STRING"]
+                                    )
+                                )
+                                
+                                # 2. Obtener la imagen
+                                image_data = await get_image_from_whatsapp(message)
+                                
+                                # 3. Procesar la imagen con Vision Agent
+                                vision_result = await vision_agent.run(
+                                    "Extract text from this invoice",
+                                    deps=vision_deps,
+                                    files={"image": image_data}
+                                )
+                                
+                                # 4. Extraer datos estructurados
+                                extraction_result = await extraction_agent.run(
+                                    vision_result.data.extracted_text,
+                                    deps=ExtractorAgentDependencies()
+                                )
+                                
+                                # 5. Almacenar en base de datos
+                                storage_result = await storage_agent.run(
+                                    "store_invoice",
+                                    deps=storage_deps,
+                                    invoice=extraction_result.data
+                                )
+                                
+                                # 6. Preparar respuesta
+                                if storage_result.data.success:
+                                    response_message = (
+                                        f"✅ Factura procesada correctamente\n"
+                                        f"📝 Número: {extraction_result.data.invoice_number}\n"
+                                        f"💰 Total: {extraction_result.data.total_amount} {extraction_result.data.currency}\n"
+                                        f"🏢 Vendedor: {extraction_result.data.vendor_name}"
+                                    )
+                                else:
+                                    response_message = "❌ Error al procesar la factura. Por favor, intenta nuevamente."
+                                
+                                await send_whatsapp_message(from_number, response_message)
+                                
+                            except Exception as e:
+                                logging.error(f"Error processing invoice: {str(e)}")
+                                await send_whatsapp_message(
+                                    from_number,
+                                    "❌ Error al procesar la imagen. Por favor, asegúrate de enviar una imagen clara de una factura."
+                                )
+                        
+                        elif message_type == 'text':
                             message_body = message.get('text', {}).get('body', '')
                             logging.info(f'- Body: {message_body}')
-                            
-                            # Send a response back to the sender
-                            response_message = "Recibí tu mensaje. Contenido:\n" + message_body
-                            send_whatsapp_message(from_number, response_message)
+                            response_message = "Recibí tu mensaje. Por favor, envía una imagen de una factura para procesarla."
+                            await send_whatsapp_message(from_number, response_message)
                         else:
                             logging.info(f'- Full message content: {json.dumps(message, indent=2)}')
+                            await send_whatsapp_message(
+                                from_number,
+                                "❌ Tipo de mensaje no soportado. Por favor, envía una imagen de una factura."
+                            )
                             
                     return func.HttpResponse(
                         "Event received",

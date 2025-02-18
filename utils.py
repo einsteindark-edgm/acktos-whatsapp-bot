@@ -1,9 +1,9 @@
 import os
-import requests
+import aiohttp
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
-def send_whatsapp_message(to_number: str, message: str) -> Dict[str, Any]:
+async def send_whatsapp_message(to_number: str, message: str) -> Dict[str, Any]:
     """Envía un mensaje de WhatsApp a través de la API de Meta."""
     try:
         # Validar variables de entorno
@@ -42,18 +42,74 @@ def send_whatsapp_message(to_number: str, message: str) -> Dict[str, Any]:
         logging.info(f"Payload: {payload}")
 
         # Enviar mensaje
-        response = requests.post(url, json=payload, headers=headers)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, headers=headers) as response:
+                # Log de la respuesta
+                logging.info(f"Respuesta de WhatsApp: {response.status}")
+                response_text = await response.text()
+                logging.info(f"Contenido de respuesta: {response_text}")
+                response.raise_for_status()
+                
+                return await response.json()
         
-        # Log de la respuesta
-        logging.info(f"Respuesta de WhatsApp: {response.status_code}")
-        logging.info(f"Contenido de respuesta: {response.text}")
-        response.raise_for_status()
-        
-        return response.json()
-        
-    except requests.exceptions.HTTPError as e:
-        logging.error(f"Error de API: {e.response.status_code} - {e.response.text}")
+    except aiohttp.ClientError as e:
+        logging.error(f"Error de API: {str(e)}")
         raise
     except Exception as e:
         logging.error(f"Error crítico: {str(e)}")
+        raise
+
+async def get_image_from_whatsapp(message: Dict[str, Any]) -> bytes:
+    """Obtiene los datos binarios de una imagen de un mensaje de WhatsApp.
+    
+    Args:
+        message: Mensaje de WhatsApp que contiene la imagen
+        
+    Returns:
+        bytes: Datos binarios de la imagen
+        
+    Raises:
+        ValueError: Si no se encuentra la imagen en el mensaje
+        Exception: Si hay un error al descargar la imagen
+    """
+    try:
+        # Validar que el mensaje tenga una imagen
+        if 'image' not in message:
+            raise ValueError("El mensaje no contiene una imagen")
+            
+        image_id = message['image'].get('id')
+        if not image_id:
+            raise ValueError("No se encontró el ID de la imagen")
+            
+        # Obtener variables de entorno
+        token = os.getenv('WHATSAPP_TOKEN')
+        if not token:
+            raise ValueError("No se encontró el token de WhatsApp")
+            
+        # Construir la URL para descargar la imagen
+        url = f"https://graph.facebook.com/v18.0/{image_id}"
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+        
+        # Obtener la URL de la imagen
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as response:
+                response.raise_for_status()
+                image_data = await response.json()
+                
+                if 'url' not in image_data:
+                    raise ValueError("No se encontró la URL de la imagen")
+                    
+                # Descargar la imagen
+                async with session.get(image_data['url'], headers=headers) as img_response:
+                    img_response.raise_for_status()
+                    return await img_response.read()
+                    
+    except aiohttp.ClientError as e:
+        logging.error(f"Error al descargar la imagen: {str(e)}")
+        raise Exception(f"Error al descargar la imagen: {str(e)}")
+        
+    except Exception as e:
+        logging.error(f"Error al procesar la imagen: {str(e)}")
         raise
