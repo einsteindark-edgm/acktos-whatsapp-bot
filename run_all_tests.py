@@ -37,7 +37,8 @@ def main():
         ("test_extraction_agent.py", "Prueba del agente de extracción de datos"),
         ("test_vision_agent.py", "Prueba del agente de visión"),
         ("test_storage_agent.py", "Prueba del agente de almacenamiento"),
-        ("test_vision_extraction_e2e.py", "Prueba end-to-end de visión y extracción")
+        ("test_vision_extraction_e2e.py", "Prueba end-to-end de visión y extracción"),
+        ("tests/app/routers/test_webhook.py", "Prueba del webhook de FastAPI")
     ]
     
     # Ejecutar todas las pruebas

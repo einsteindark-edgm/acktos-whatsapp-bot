@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+.github
+
+# Entornos virtuales
+.venv
+venv
+env
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Archivos de IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Archivos sensibles
+.env
+
+# Logs
+logs
+*.log
+
+# Archivos de prueba
+.pytest_cache
+__pycache__
+
+# Otros
+.DS_Store
+Thumbs.db

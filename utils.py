@@ -2,18 +2,16 @@ import os
 import aiohttp
 import logging
 from typing import Dict, Any, Optional
+from app.config import settings
 
 async def send_whatsapp_message(to_number: str, message: str) -> Dict[str, Any]:
     """Envía un mensaje de WhatsApp a través de la API de Meta."""
     try:
         # Validar variables de entorno
         required_env_vars = {
-            'WHATSAPP_TOKEN': os.getenv('WHATSAPP_TOKEN'),
-            'WHATSAPP_PHONE_NUMBER_ID': os.getenv('WHATSAPP_PHONE_NUMBER_ID')
+            'WHATSAPP_TOKEN': settings.WHATSAPP_TOKEN,
+            'WHATSAPP_PHONE_NUMBER_ID': settings.WHATSAPP_PHONE_NUMBER_ID
         }
-        missing_vars = [k for k, v in required_env_vars.items() if not v]
-        if missing_vars:
-            raise ValueError(f"Faltan variables de entorno: {', '.join(missing_vars)}")
         
         # Validar parámetros de entrada
         if not to_number.startswith('+') or len(to_number) < 10:
@@ -81,10 +79,8 @@ async def get_image_from_whatsapp(message: Dict[str, Any]) -> bytes:
         if not image_id:
             raise ValueError("No se encontró el ID de la imagen")
             
-        # Obtener variables de entorno
-        token = os.getenv('WHATSAPP_TOKEN')
-        if not token:
-            raise ValueError("No se encontró el token de WhatsApp")
+        # Obtener el token de WhatsApp
+        token = settings.WHATSAPP_TOKEN
             
         # Construir la URL para descargar la imagen
         url = f"https://graph.facebook.com/v18.0/{image_id}"

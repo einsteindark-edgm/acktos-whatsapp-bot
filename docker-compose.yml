@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: whatsapp-invoice-processor
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - ENVIRONMENT=production
+      # No incluir variables sensibles aquu00ed, usar archivo .env o secretos en producciu00f3n
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
