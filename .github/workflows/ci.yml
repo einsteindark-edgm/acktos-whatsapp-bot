@@ -21,7 +21,8 @@ jobs:
       WHATSAPP_TOKEN: test_token
       WHATSAPP_PHONE_NUMBER_ID: '123456'
       WHATSAPP_VERIFY_TOKEN_WEBHOOK: test_webhook
-      COSMOSDB_CONNECTION_STRING: mongodb://localhost:27017
+      # Usar MongoDB directamente para testing
+      MONGO_CONNECTION_STRING: mongodb://localhost:27017
 
     steps:
     - name: Checkout repository
@@ -54,8 +55,7 @@ jobs:
         
         echo "Paso 3: Instalando bibliotecas de bases de datos..."
         pip install pymongo==4.6.1
-        # Azure Cosmos puede fallar en algunas máquinas
-        pip install azure-cosmos==4.5.1 || echo "Omitiendo azure-cosmos"
+        # Usar MongoDB para almacenamiento
         
         echo "Paso 4: Instalando dependencias de AI..."
         pip install pydantic-ai==0.0.30 || echo "Omitiendo pydantic-ai"
