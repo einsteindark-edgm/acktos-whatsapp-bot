@@ -14,13 +14,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Variables de entorno para pruebas
     env:
-      # Valores por defecto para CI si no hay secretos configurados
-      TEST_WHATSAPP_TOKEN: test_token
-      TEST_WHATSAPP_PHONE_ID: '123456'
-      TEST_WEBHOOK_TOKEN: test_webhook
-      TEST_DUMMY_API_KEY: sk-test-dummy-key
-      TEST_MONGODB_URL: mongodb://localhost:27017
       PYDANTICAI_ALLOW_MODEL_REQUESTS: 'false'
 
     steps:
@@ -33,52 +28,28 @@ jobs:
         python-version: '3.10'
         cache: 'pip'
 
-    - name: Configure environment variables
+    - name: Setup Environment Variables
       run: |
-        # Configuración de variables de entorno para pruebas
-        if [ -n "$SECRETS_WHATSAPP_TOKEN" ]; then
-          echo "WHATSAPP_TOKEN=\"$SECRETS_WHATSAPP_TOKEN\"" >> $GITHUB_ENV
-        else
-          echo "WHATSAPP_TOKEN=\"$TEST_WHATSAPP_TOKEN\"" >> $GITHUB_ENV
-          echo "Warning: Using test WhatsApp token"
-        fi
+        # Configurar valores predeterminados
+        echo "WHATSAPP_TOKEN=test_token" >> $GITHUB_ENV
+        echo "WHATSAPP_PHONE_NUMBER_ID=123456" >> $GITHUB_ENV
+        echo "WHATSAPP_VERIFY_TOKEN_WEBHOOK=test_webhook" >> $GITHUB_ENV
+        echo "OPENAI_API_KEY=sk-test-dummy-key" >> $GITHUB_ENV
+        echo "COSMOSDB_CONNECTION_STRING=mongodb://localhost:27017" >> $GITHUB_ENV
+        
+        # Log status
+        echo "CI: Using default environment for testing"
 
-        if [ -n "$SECRETS_PHONE_ID" ]; then
-          echo "WHATSAPP_PHONE_NUMBER_ID=\"$SECRETS_PHONE_ID\"" >> $GITHUB_ENV
-        else
-          echo "WHATSAPP_PHONE_NUMBER_ID=\"$TEST_WHATSAPP_PHONE_ID\"" >> $GITHUB_ENV
-        fi
-
-        if [ -n "$SECRETS_WEBHOOK_TOKEN" ]; then
-          echo "WHATSAPP_VERIFY_TOKEN_WEBHOOK=\"$SECRETS_WEBHOOK_TOKEN\"" >> $GITHUB_ENV
-        else
-          echo "WHATSAPP_VERIFY_TOKEN_WEBHOOK=\"$TEST_WEBHOOK_TOKEN\"" >> $GITHUB_ENV
-        fi
-
-        if [ -n "$SECRETS_OPENAI_KEY" ]; then
-          echo "OPENAI_API_KEY=\"$SECRETS_OPENAI_KEY\"" >> $GITHUB_ENV
-        else
-          echo "OPENAI_API_KEY=\"$TEST_DUMMY_API_KEY\"" >> $GITHUB_ENV
-          echo "Warning: Using dummy OpenAI API key"
-        fi
-
-        if [ -n "$SECRETS_COSMOS_STRING" ]; then
-          echo "COSMOSDB_CONNECTION_STRING=\"$SECRETS_COSMOS_STRING\"" >> $GITHUB_ENV
-        else
-          echo "COSMOSDB_CONNECTION_STRING=\"$TEST_MONGODB_URL\"" >> $GITHUB_ENV
-        fi
-      env:
-        SECRETS_WHATSAPP_TOKEN: ${{ secrets.WHATSAPP_TOKEN }}
-        SECRETS_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
-        SECRETS_WEBHOOK_TOKEN: ${{ secrets.WHATSAPP_VERIFY_TOKEN_WEBHOOK }}
-        SECRETS_OPENAI_KEY: ${{ secrets.OPENAI_API_KEY }}
-        SECRETS_COSMOS_STRING: ${{ secrets.COSMOSDB_CONNECTION_STRING }}
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-cov
+        python -m pip install --upgrade pip wheel setuptools
+        # Instalar dependencias de sistema necesarias para compilar algunas bibliotecas Python
+        sudo apt-get update
+        sudo apt-get install -y build-essential libffi-dev
+        # Instalar dependencias en modo verbose para ver errores detallados
+        pip install -v -r requirements.txt
+        pip install pytest pytest-cov pytest-html
 
     - name: Run core tests
       run: |
