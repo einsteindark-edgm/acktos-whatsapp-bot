@@ -44,16 +44,30 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip wheel setuptools
-        # Instalar dependencias de sistema necesarias para compilar algunas bibliotecas Python
+        # Instalar dependencias de sistema
         sudo apt-get update
         sudo apt-get install -y build-essential libffi-dev
-        # Instalar dependencias en modo verbose para ver errores detallados
-        pip install -v -r requirements.txt
-        pip install pytest pytest-cov pytest-html
+        # Instalar cada dependencia por separado para identificar problemas
+        # Primero las dependencias básicas de testing
+        pip install pytest pytest-cov pytest-html pytest-asyncio pytest-mock
+        # Luego las dependencias principales
+        pip install fastapi uvicorn pydantic pydantic-settings python-dotenv python-multipart
+        pip install httpx requests requests-mock
+        pip install typing-extensions certifi charset-normalizer
+        # Instalar pydantic-ai con soporte de mongo
+        pip install pydantic-ai mongodb pymongo
+        # Finalizar con las dependencias opcionales
+        pip install aiohttp openai
+        # Intentar instalar azure-cosmos si está disponible
+        pip install azure-cosmos || echo "Omitiendo azure-cosmos"
+        
+        echo "Todas las dependencias fueron instaladas correctamente"
+        python -m pip freeze
 
     - name: Run core tests
       run: |
-        pytest tests/ -v
+        # Ejecutar pruebas y generar reporte XML
+        pytest tests/ -v --junitxml=pytest-report.xml
 
     - name: Run agent tests
       run: |
@@ -65,19 +79,29 @@ jobs:
         
     - name: Generate coverage report
       run: |
-        pytest --cov=app --cov=agents --cov-report=xml --cov-report=html:
+        # Crear directorio para informes
         mkdir -p coverage-reports
-        mv coverage.xml coverage-reports/
-        mv htmlcov coverage-reports/
-      if: success()
+        # Ejecutar pytest para generar informes HTML y XML
+        pytest --cov=app --cov=agents --cov-report=xml --cov-report=html --html=pytest-report.html
+        # Mover los informes a la carpeta coverage-reports
+        cp coverage.xml coverage-reports/ || echo "No coverage.xml file"
+        cp -r htmlcov coverage-reports/ || echo "No htmlcov directory"
+        cp pytest-report.html coverage-reports/ || echo "No pytest-report.html file"
+        # Listar archivos para verificar
+        echo "Archivos generados:"
+        ls -la
+        ls -la coverage-reports/ || echo "No coverage-reports directory"
+      if: always()
 
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: |  
-          pytest-report.xml
-          pytest-report.html
-          coverage-reports/
+        path: |
+          ./*.xml
+          ./*.html
+          ./coverage-reports/
+          ./htmlcov/
         retention-days: 7
+        if-no-files-found: warn
