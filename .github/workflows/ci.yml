@@ -1,0 +1,112 @@
+name: CI Tests
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      # Valores por defecto para CI si no hay secretos configurados
+      TEST_WHATSAPP_TOKEN: test_token
+      TEST_WHATSAPP_PHONE_ID: '123456'
+      TEST_WEBHOOK_TOKEN: test_webhook
+      TEST_DUMMY_API_KEY: sk-test-dummy-key
+      TEST_MONGODB_URL: mongodb://localhost:27017
+      PYDANTICAI_ALLOW_MODEL_REQUESTS: 'false'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Configure environment variables
+      run: |
+        # Configuración de variables de entorno para pruebas
+        if [ -n "$SECRETS_WHATSAPP_TOKEN" ]; then
+          echo "WHATSAPP_TOKEN=\"$SECRETS_WHATSAPP_TOKEN\"" >> $GITHUB_ENV
+        else
+          echo "WHATSAPP_TOKEN=\"$TEST_WHATSAPP_TOKEN\"" >> $GITHUB_ENV
+          echo "Warning: Using test WhatsApp token"
+        fi
+
+        if [ -n "$SECRETS_PHONE_ID" ]; then
+          echo "WHATSAPP_PHONE_NUMBER_ID=\"$SECRETS_PHONE_ID\"" >> $GITHUB_ENV
+        else
+          echo "WHATSAPP_PHONE_NUMBER_ID=\"$TEST_WHATSAPP_PHONE_ID\"" >> $GITHUB_ENV
+        fi
+
+        if [ -n "$SECRETS_WEBHOOK_TOKEN" ]; then
+          echo "WHATSAPP_VERIFY_TOKEN_WEBHOOK=\"$SECRETS_WEBHOOK_TOKEN\"" >> $GITHUB_ENV
+        else
+          echo "WHATSAPP_VERIFY_TOKEN_WEBHOOK=\"$TEST_WEBHOOK_TOKEN\"" >> $GITHUB_ENV
+        fi
+
+        if [ -n "$SECRETS_OPENAI_KEY" ]; then
+          echo "OPENAI_API_KEY=\"$SECRETS_OPENAI_KEY\"" >> $GITHUB_ENV
+        else
+          echo "OPENAI_API_KEY=\"$TEST_DUMMY_API_KEY\"" >> $GITHUB_ENV
+          echo "Warning: Using dummy OpenAI API key"
+        fi
+
+        if [ -n "$SECRETS_COSMOS_STRING" ]; then
+          echo "COSMOSDB_CONNECTION_STRING=\"$SECRETS_COSMOS_STRING\"" >> $GITHUB_ENV
+        else
+          echo "COSMOSDB_CONNECTION_STRING=\"$TEST_MONGODB_URL\"" >> $GITHUB_ENV
+        fi
+      env:
+        SECRETS_WHATSAPP_TOKEN: ${{ secrets.WHATSAPP_TOKEN }}
+        SECRETS_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+        SECRETS_WEBHOOK_TOKEN: ${{ secrets.WHATSAPP_VERIFY_TOKEN_WEBHOOK }}
+        SECRETS_OPENAI_KEY: ${{ secrets.OPENAI_API_KEY }}
+        SECRETS_COSMOS_STRING: ${{ secrets.COSMOSDB_CONNECTION_STRING }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+
+    - name: Run core tests
+      run: |
+        pytest tests/ -v
+
+    - name: Run agent tests
+      run: |
+        ./scripts/test_agents.sh
+
+    - name: Test FastAPI application
+      run: |
+        ./test_fastapi.sh
+        
+    - name: Generate coverage report
+      run: |
+        pytest --cov=app --cov=agents --cov-report=xml --cov-report=html:
+        mkdir -p coverage-reports
+        mv coverage.xml coverage-reports/
+        mv htmlcov coverage-reports/
+      if: success()
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |  
+          pytest-report.xml
+          pytest-report.html
+          coverage-reports/
+        retention-days: 7
