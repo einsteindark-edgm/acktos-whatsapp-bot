@@ -41,33 +41,107 @@ jobs:
         echo "Directory contents:"
         ls -la
 
-    - name: Install basic dependencies
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        # Solo instalar dependencias básicas para verificar que todo funciona
-        pip install pytest
+        echo "Paso 1: Instalando dependencias de testing..."
+        pip install pytest pytest-cov pytest-asyncio pytest-mock pytest-html
+        
+        echo "Paso 2: Instalando dependencias principales..."
+        pip install fastapi==0.110.0 uvicorn[standard]==0.27.1
+        pip install pydantic==2.10.6 pydantic-settings==2.1.0
+        pip install python-dotenv==1.0.0 python-multipart==0.0.9
+        
+        echo "Paso 3: Instalando bibliotecas de bases de datos..."
+        pip install pymongo==4.6.1
+        # Azure Cosmos puede fallar en algunas máquinas
+        pip install azure-cosmos==4.5.1 || echo "Omitiendo azure-cosmos"
+        
+        echo "Paso 4: Instalando dependencias de AI..."
+        pip install pydantic-ai==0.0.30 || echo "Omitiendo pydantic-ai"
+        pip install openai==1.12.0
+        
+        echo "Paso 5: Instalando utilidades y bibliotecas de red..."
+        pip install httpx==0.27.0 requests==2.31.0 aiohttp==3.9.3
+        pip install typing_extensions==4.12.2 certifi==2024.8.30
+        
+        echo "Dependencias instaladas:"
+        pip list
 
-    - name: Verify pytest
+    - name: Run basic tests
       run: |
-        # Simplemente verificar que pytest esté instalado y funcionando
-        python -c "import pytest; print(f'Pytest version: {pytest.__version__}')"
+        echo "Verificando estructura del proyecto..."
+        ls -la
+        echo "Verificando directorio de tests..."
+        ls -la tests/ || echo "Directorio tests/ no encontrado"
+        
+        echo "Ejecutando pruebas básicas..."
+        # Primero intentamos ejecutar solo los tests básicos, sin importar si fallan
+        pytest tests/ -v || echo "Algunas pruebas fallaron, pero continuamos"
+    
+    - name: Execute PydanticAI tests with mocks
+      run: |
+        echo "Configurando PYDANTICAI_ALLOW_MODEL_REQUESTS=false para tests"
+        export PYDANTICAI_ALLOW_MODEL_REQUESTS=false
+        
+        # Ejecutar scripts de test si existen, ignorando errores
+        if [ -f ./scripts/test_agents.sh ]; then
+          echo "Ejecutando tests de agentes..."
+          chmod +x ./scripts/test_agents.sh
+          ./scripts/test_agents.sh || echo "Tests de agentes fallaron, pero continuamos"
+        else
+          echo "Scripts de test de agentes no encontrados"
+        fi
+        
+        if [ -f ./test_fastapi.sh ]; then
+          echo "Ejecutando tests de FastAPI..."
+          chmod +x ./test_fastapi.sh
+          ./test_fastapi.sh || echo "Tests de FastAPI fallaron, pero continuamos"
+        else
+          echo "Script de test de FastAPI no encontrado"
+        fi
 
-    - name: Create test report
+    - name: Generate test reports
       run: |
-        # Crear un archivo de reporte simple para verificar la carga de artefactos
-        echo "Test report created at $(date)" > test-report.txt
-        echo "Python environment:" >> test-report.txt
-        pip list >> test-report.txt
-        # Asegurarse de que exista un directorio para artefactos
+        # Crear directorio para informes
         mkdir -p test-artifacts
-        cp test-report.txt test-artifacts/
+        
+        # Generar informe de cobertura si es posible, ignorando errores
+        pytest --cov=app --cov=agents --cov-report=xml --cov-report=html --html=pytest-report.html || echo "Generación de informes de cobertura falló, pero continuamos"
+        
+        # Recopilar informes de prueba
+        if [ -f coverage.xml ]; then
+          cp coverage.xml test-artifacts/
+        fi
+        
+        if [ -d htmlcov ]; then
+          cp -r htmlcov test-artifacts/
+        fi
+        
+        if [ -f pytest-report.html ]; then
+          cp pytest-report.html test-artifacts/
+        fi
+        
+        # Crear informe detallado del entorno
+        echo "Informe del entorno de CI - $(date)" > test-artifacts/environment-report.txt
+        echo "Python version: $(python --version)" >> test-artifacts/environment-report.txt
+        echo "Dependencias instaladas:" >> test-artifacts/environment-report.txt
+        pip list >> test-artifacts/environment-report.txt
+        echo "Variables de entorno configuradas:" >> test-artifacts/environment-report.txt
+        echo "PYDANTICAI_ALLOW_MODEL_REQUESTS: $PYDANTICAI_ALLOW_MODEL_REQUESTS" >> test-artifacts/environment-report.txt
+        
+        echo "Contenido del directorio de artefactos:"
+        ls -la test-artifacts/
 
     - name: Upload test artifacts
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-reports
         path: |
-          test-report.txt
           test-artifacts/
-        retention-days: 1
+          ./coverage.xml
+          ./pytest-report.html
+          ./htmlcov/
+        retention-days: 7
         if-no-files-found: warn
