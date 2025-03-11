@@ -60,7 +60,7 @@ def main():
         (os.path.join(base_dir, "tests", "manual", "check_deps.py"), "Verificación de dependencias", []),
         (os.path.join(base_dir, "tests", "manual", "mock_test.py"), "Prueba de mocks y dependencias", []),
         (os.path.join(base_dir, "tests", "manual", "test_extraction_agent.py"), "Prueba del agente de extracción de datos", []),
-        (os.path.join(base_dir, "tests", "manual", "test_vision_agent.py"), "Prueba del agente de visión", []),
+        (os.path.join(base_dir, "tests", "manual", "test_manual_vision_agent.py"), "Prueba del agente de visión", []),
         (os.path.join(base_dir, "tests", "manual", "test_storage_agent.py"), "Prueba del agente de almacenamiento", []),
         
         # Pruebas de integración
