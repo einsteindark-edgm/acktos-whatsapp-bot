@@ -1,6 +1,15 @@
+import os
+import sys
+from pathlib import Path
+
+# Añadir el directorio raíz del proyecto al PATH de Python
+root_dir = Path(__file__).parent.parent.parent.absolute()
+print(f"Añadiendo directorio raíz al PATH: {root_dir}")
+sys.path.insert(0, str(root_dir))
+
 import pytest
-from pydanticai import models
-from pydanticai.testing import TestModel, capture_run_messages
+from pydantic_ai import models
+from pydantic_ai.testing import TestModel, capture_run_messages
 
 # Marcar todas las pruebas como asu00edncronas
 pytestmark = pytest.mark.anyio

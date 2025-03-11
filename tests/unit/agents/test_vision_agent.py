@@ -1,3 +1,12 @@
+import os
+import sys
+from pathlib import Path
+
+# Añadir el directorio raíz del proyecto al PATH de Python
+root_dir = Path(__file__).parent.parent.parent.parent.absolute()
+print(f"Añadiendo directorio raíz al PATH: {root_dir}")
+sys.path.insert(0, str(root_dir))
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from pydantic_ai import models, capture_run_messages
