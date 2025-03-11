@@ -2,10 +2,30 @@ import os
 import sys
 import subprocess
 
-def run_test(test_script, description):
+def check_module_available(module_name):
+    """Comprueba si un módulo está disponible para importar"""
+    try:
+        __import__(module_name)
+        return True
+    except ImportError:
+        return False
+
+def run_test(test_script, description, required_modules=None):
     print(f"\n{'='*80}")
     print(f"Ejecutando {description}...")
     print(f"{'='*80}")
+    
+    # Verificar que los módulos requeridos estén disponibles
+    if required_modules:
+        missing_modules = []
+        for module in required_modules:
+            if not check_module_available(module):
+                missing_modules.append(module)
+        
+        if missing_modules:
+            print(f"\n[SKIP] No se puede ejecutar {description} debido a módulos faltantes: {', '.join(missing_modules)}")
+            print(f"Instale los módulos faltantes con: pip install {' '.join(missing_modules)}")
+            return None  # Indicar que la prueba se omitió
     
     result = subprocess.run(
         [sys.executable, test_script],
@@ -30,22 +50,26 @@ def main():
     # Activar entorno virtual
     os.environ['OPENAI_API_KEY'] = 'dummy_key'
     
-    # Lista de pruebas a ejecutar
+    # Obtener la ruta base del proyecto
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(os.path.dirname(current_dir))  # Sube 2 niveles desde scripts/ a la raíz
+    
+    # Lista de pruebas a ejecutar con rutas absolutas y sus dependencias
     tests = [
-        ("../manual/check_deps.py", "Verificación de dependencias"),
-        ("../manual/mock_test.py", "Prueba de mocks y dependencias"),
-        ("../manual/test_extraction_agent.py", "Prueba del agente de extracción de datos"),
-        ("../manual/test_vision_agent.py", "Prueba del agente de visión"),
-        ("../manual/test_storage_agent.py", "Prueba del agente de almacenamiento"),
-        ("../integration/test_vision_extraction_e2e.py", "Prueba end-to-end de visión y extracción"),
-        ("../app/routers/test_webhook.py", "Prueba del webhook de FastAPI")
+        (os.path.join(base_dir, "tests", "manual", "check_deps.py"), "Verificación de dependencias", []),
+        (os.path.join(base_dir, "tests", "manual", "mock_test.py"), "Prueba de mocks y dependencias", []),
+        (os.path.join(base_dir, "tests", "manual", "test_extraction_agent.py"), "Prueba del agente de extracción de datos", []),
+        (os.path.join(base_dir, "tests", "manual", "test_vision_agent.py"), "Prueba del agente de visión", []),
+        (os.path.join(base_dir, "tests", "manual", "test_storage_agent.py"), "Prueba del agente de almacenamiento", []),
+        (os.path.join(base_dir, "tests", "integration", "test_vision_extraction_e2e.py"), "Prueba end-to-end de visión y extracción", []),
+        (os.path.join(base_dir, "tests", "app", "routers", "test_webhook.py"), "Prueba del webhook de FastAPI", ["fastapi"])
     ]
     
     # Ejecutar todas las pruebas
     results = []
-    for test_script, description in tests:
-        success = run_test(test_script, description)
-        results.append((test_script, success))
+    for test_script, description, required_modules in tests:
+        result = run_test(test_script, description, required_modules)
+        results.append((test_script, result))
     
     # Mostrar resumen
     print(f"\n{'='*80}")
@@ -53,18 +77,29 @@ def main():
     print(f"{'='*80}")
     
     all_passed = True
-    for test_script, success in results:
-        status = "[PASS]" if success else "[FAIL]"
-        print(f"{status}: {test_script}")
-        if not success:
+    any_failed = False
+    
+    for test_script, result in results:
+        if result is None:
+            status = "[SKIP]"
+        elif result is True:
+            status = "[PASS]"
+        else:  # False
+            status = "[FAIL]"
+            any_failed = True
             all_passed = False
+        
+        print(f"{status}: {test_script}")
     
     if all_passed:
         print("\n[PASS] Todas las pruebas pasaron correctamente!")
         return 0
-    else:
+    elif any_failed:
         print("\n[FAIL] Algunas pruebas fallaron!")
         return 1
+    else:
+        print("\n[WARNING] Algunas pruebas fueron omitidas debido a dependencias faltantes")
+        return 0  # No consideramos que sea un error si las pruebas se omitieron intencionalmente
 
 if __name__ == "__main__":
     try:
