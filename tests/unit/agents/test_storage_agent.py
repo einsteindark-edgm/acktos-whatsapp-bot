@@ -23,8 +23,9 @@ from models.dependencies import StorageAgentDependencies
 from models.invoice import Invoice, InvoiceItem
 from providers.storage.base import StorageProvider
 
-# Usar anyio para pruebas asincronu00f3nicas
-pytestmark = pytest.mark.anyio
+# Usar exclusivamente asyncio para pruebas, evitando completamente trio
+# Esto es crucial para que los tests funcionen en CI donde trio no está instalado
+pytestmark = pytest.mark.asyncio
 
 # Prevenir llamadas reales al API
 models.ALLOW_MODEL_REQUESTS = False

@@ -36,6 +36,9 @@ pytest.ini = {
     'testpaths': ['tests/unit'],
 }
 
+# Forzar que pytest-anyio use solo asyncio como backend por defecto
+os.environ['PYTEST_ANYIO_BACKEND'] = 'asyncio'
+
 @pytest.fixture
 def simple_test_model():
     """Fixture que proporciona un TestModel sencillo para todas las pruebas."""
@@ -107,14 +110,27 @@ def message_capture():
     with capture_run_messages() as messages:
         yield messages
         
-# Arreglar el problema de duo para evitar errores si no está instalado
-pytest.skip = pytest.mark.skip
+# Desactivar completamente las pruebas de trio
+os.environ['PYTEST_ANYIO_BACKEND'] = 'asyncio'  # Forzar solo el uso de asyncio
+
 try:
     import trio
 except ImportError:
-    # Marcar todas las pruebas de trio para ser omitidas
-    @pytest.fixture(scope='session', autouse=True)
+    # Si trio no está instalado, redefinir pytest.mark.anyio para usar solo asyncio
+    _original_anyio = getattr(pytest.mark, 'anyio', None)
+    
+    def _anyio_asyncio_only(*args, **kwargs):
+        # Sobrescribir cualquier backend solicitado con 'asyncio'
+        kwargs['backend'] = 'asyncio'
+        return _original_anyio(*args, **kwargs) if _original_anyio else pytest.mark.skip(reason='trio no está instalado')
+    
+    # Reemplazar el marcador anyio original
+    if _original_anyio:
+        pytest.mark.anyio = _anyio_asyncio_only
+        
+    # Auto-skip para cualquier prueba que intente usar trio
+    @pytest.fixture(autouse=True)
     def skip_trio_tests(request):
-        if 'trio' in request.node.name:
+        if hasattr(request, 'node') and 'trio' in getattr(request.node, 'name', ''):
             pytest.skip('trio no está instalado')
 

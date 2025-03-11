@@ -10,8 +10,9 @@ from models.dependencies import ExtractorAgentDependencies
 from models.invoice import Invoice, InvoiceItem
 from tests.unit.mocks.providers import MockVisionProvider, MockStorageProvider
 
-# Usar solo asyncio para pruebas
-pytestmark = pytest.mark.anyio
+# Usar exclusivamente asyncio para pruebas, evitando completamente trio
+# Esto es crucial para que los tests funcionen en CI donde trio no está instalado
+pytestmark = pytest.mark.asyncio
 
 # Prevenir llamadas reales al API
 models.ALLOW_MODEL_REQUESTS = False
