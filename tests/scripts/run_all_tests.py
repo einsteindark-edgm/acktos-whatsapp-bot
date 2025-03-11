@@ -56,13 +56,22 @@ def main():
     
     # Lista de pruebas a ejecutar con rutas absolutas y sus dependencias
     tests = [
+        # Pruebas manuales
         (os.path.join(base_dir, "tests", "manual", "check_deps.py"), "Verificación de dependencias", []),
         (os.path.join(base_dir, "tests", "manual", "mock_test.py"), "Prueba de mocks y dependencias", []),
         (os.path.join(base_dir, "tests", "manual", "test_extraction_agent.py"), "Prueba del agente de extracción de datos", []),
         (os.path.join(base_dir, "tests", "manual", "test_vision_agent.py"), "Prueba del agente de visión", []),
         (os.path.join(base_dir, "tests", "manual", "test_storage_agent.py"), "Prueba del agente de almacenamiento", []),
+        
+        # Pruebas de integración
         (os.path.join(base_dir, "tests", "integration", "test_vision_extraction_e2e.py"), "Prueba end-to-end de visión y extracción", []),
-        (os.path.join(base_dir, "tests", "app", "routers", "test_webhook.py"), "Prueba del webhook de FastAPI", ["fastapi"])
+        (os.path.join(base_dir, "tests", "app", "routers", "test_webhook.py"), "Prueba del webhook de FastAPI", ["fastapi"]),
+        
+        # Pruebas específicas de agentes (usadas también por CI)
+        (os.path.join(base_dir, "tests", "agents", "test_vision_agent.py"), "Prueba específica del agente de visión", ["pydantic_ai"]),
+        
+        # Pruebas unitarias
+        (os.path.join(base_dir, "tests", "unit", "agents", "test_vision_agent.py"), "Prueba unitaria del agente de visión", ["pydantic_ai"])
     ]
     
     # Ejecutar todas las pruebas

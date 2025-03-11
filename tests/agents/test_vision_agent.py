@@ -8,8 +8,8 @@ print(f"Añadiendo directorio raíz al PATH: {root_dir}")
 sys.path.insert(0, str(root_dir))
 
 import pytest
-from pydantic_ai import models
-from pydantic_ai.testing import TestModel, capture_run_messages
+from pydantic_ai import models, capture_run_messages
+from pydantic_ai.models.test import TestModel
 
 # Marcar todas las pruebas como asu00edncronas
 pytestmark = pytest.mark.anyio
@@ -18,7 +18,8 @@ pytestmark = pytest.mark.anyio
 models.ALLOW_MODEL_REQUESTS = False
 
 # Importar despuu00e9s para evitar problemas con ALLOW_MODEL_REQUESTS
-from agents.vision_agent import vision_agent, VisionAgentDependencies, VisionAgentResult
+from agents.vision_agent import vision_agent, VisionResult  # Nombre correcto de la clase
+from models.dependencies import VisionAgentDependencies  # Importar desde la ubicación correcta
 
 
 @pytest.fixture
