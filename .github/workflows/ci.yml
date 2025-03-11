@@ -53,9 +53,10 @@ jobs:
         pip install pydantic==2.10.6 pydantic-settings==2.1.0
         pip install python-dotenv==1.0.0 python-multipart==0.0.9
         
-        echo "Paso 3: Instalando bibliotecas de bases de datos..."
+        echo "Paso 3: Instalando bibliotecas de bases de datos y Azure..."
         pip install pymongo==4.6.1
-        # Usar MongoDB para almacenamiento
+        # Todavía necesitamos azure-functions para algunas partes del código
+        pip install azure-functions==1.17.0
         
         echo "Paso 4: Instalando dependencias de AI..."
         pip install pydantic-ai==0.0.30 || echo "Omitiendo pydantic-ai"
@@ -76,19 +77,19 @@ jobs:
         ls -la tests/ || echo "Directorio tests/ no encontrado"
         
         echo "Ejecutando pruebas básicas..."
-        # Primero intentamos ejecutar solo los tests básicos, sin importar si fallan
-        pytest tests/ -v || echo "Algunas pruebas fallaron, pero continuamos"
+        # Las pruebas deben pasar para que el CI sea exitoso
+        pytest tests/ -v
     
     - name: Execute PydanticAI tests with mocks
       run: |
         echo "Configurando PYDANTICAI_ALLOW_MODEL_REQUESTS=false para tests"
         export PYDANTICAI_ALLOW_MODEL_REQUESTS=false
         
-        # Ejecutar scripts de test si existen, ignorando errores
+        # Ejecutar scripts de test si existen
         if [ -f ./scripts/test_agents.sh ]; then
           echo "Ejecutando tests de agentes..."
           chmod +x ./scripts/test_agents.sh
-          ./scripts/test_agents.sh || echo "Tests de agentes fallaron, pero continuamos"
+          ./scripts/test_agents.sh
         else
           echo "Scripts de test de agentes no encontrados"
         fi
@@ -96,7 +97,7 @@ jobs:
         if [ -f ./test_fastapi.sh ]; then
           echo "Ejecutando tests de FastAPI..."
           chmod +x ./test_fastapi.sh
-          ./test_fastapi.sh || echo "Tests de FastAPI fallaron, pero continuamos"
+          ./test_fastapi.sh
         else
           echo "Script de test de FastAPI no encontrado"
         fi
@@ -106,8 +107,8 @@ jobs:
         # Crear directorio para informes
         mkdir -p test-artifacts
         
-        # Generar informe de cobertura si es posible, ignorando errores
-        pytest --cov=app --cov=agents --cov-report=xml --cov-report=html --html=pytest-report.html || echo "Generación de informes de cobertura falló, pero continuamos"
+        # Generar informe de cobertura
+        pytest --cov=app --cov=agents --cov-report=xml --cov-report=html --html=pytest-report.html
         
         # Recopilar informes de prueba
         if [ -f coverage.xml ]; then
