@@ -1,6 +1,7 @@
 import os
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent, RunContext, models
+from pydantic_ai import Agent, RunContext
+from pydantic_ai.models.test import TestModel
 from models.dependencies import StorageAgentDependencies
 from models.invoice import Invoice
 
@@ -15,7 +16,7 @@ def get_model_for_environment():
     # Si estamos en un entorno de prueba, usamos TestModel
     if os.environ.get('PYDANTICAI_ALLOW_MODEL_REQUESTS', 'true').lower() == 'false':
         print("StorageAgent: Usando TestModel para pruebas")
-        return models.TestModel()
+        return TestModel()
     # Si no, usamos el modelo OpenAI normal
     return 'openai:gpt-4'
 
