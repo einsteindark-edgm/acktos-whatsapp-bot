@@ -21,8 +21,8 @@ from agents.vision_agent import vision_agent, VisionResult
 from models.dependencies import VisionAgentDependencies
 from providers.vision.base import VisionProvider
 
-# Usar anyio para pruebas asincru00f3nicas
-pytestmark = pytest.mark.anyio
+# Aplicar marcadores a nivel de función en lugar de módulo
+# Eliminamos la línea problemática: pytestmark = pytest.mark.anyio
 
 # Prevenir llamadas reales al API
 models.ALLOW_MODEL_REQUESTS = False
@@ -31,6 +31,7 @@ models.ALLOW_MODEL_REQUESTS = False
 from tests.unit.mocks.providers import MockVisionProvider
 
 
+@pytest.mark.anyio
 async def test_process_invoice_image_with_testmodel(vision_deps, message_capture):
     """Test para verificar que el agente puede procesar imágenes de facturas usando TestModel."""
     # Datos de imagen simulados
@@ -63,6 +64,7 @@ async def test_process_invoice_image_with_testmodel(vision_deps, message_capture
 
 
 # Simplificar pruebas para evitar depender de FunctionModel
+@pytest.mark.anyio
 async def test_vision_provider_directly(vision_deps):
     """Test que verifica directamente el funcionamiento del proveedor de visión."""
     # Obtener el proveedor de visión simulado de las dependencias
