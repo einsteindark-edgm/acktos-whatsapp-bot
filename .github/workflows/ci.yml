@@ -21,8 +21,9 @@ jobs:
       WHATSAPP_TOKEN: test_token
       WHATSAPP_PHONE_NUMBER_ID: '123456'
       WHATSAPP_VERIFY_TOKEN_WEBHOOK: test_webhook
-      # Usar MongoDB directamente para testing
+      # Compatibilidad con ambas variables de conexión a bases de datos
       MONGO_CONNECTION_STRING: mongodb://localhost:27017
+      COSMOSDB_CONNECTION_STRING: mongodb://localhost:27017
 
     steps:
     - name: Checkout repository

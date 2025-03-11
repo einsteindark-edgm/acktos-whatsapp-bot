@@ -18,7 +18,30 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
     
     # Base de datos
-    COSMOSDB_CONNECTION_STRING: str
+    COSMOSDB_CONNECTION_STRING: Optional[str] = None
+    MONGO_CONNECTION_STRING: Optional[str] = None
+    
+    @field_validator('COSMOSDB_CONNECTION_STRING', 'MONGO_CONNECTION_STRING', mode='before')
+    def check_db_connection(cls, v, info):
+        # Validar que al menos una conexión esté definida
+        field_name = info.field_name
+        if field_name == 'COSMOSDB_CONNECTION_STRING' and not v:
+            # Si COSMOSDB no está definido, no es error - verificaremos MONGO después
+            return None
+        if field_name == 'MONGO_CONNECTION_STRING' and not v:
+            # Si MONGO no está definido, no es error - ya deberíamos tener COSMOSDB
+            return None
+        return v
+    
+    @computed_field
+    @property
+    def database_connection_string(self) -> str:
+        """Obtiene la cadena de conexión a la base de datos disponible"""
+        if self.MONGO_CONNECTION_STRING:
+            return self.MONGO_CONNECTION_STRING
+        if self.COSMOSDB_CONNECTION_STRING:
+            return self.COSMOSDB_CONNECTION_STRING
+        raise ValueError("No se ha configurado ninguna conexión a base de datos")
     
     # Modelos AI
     VISION_MODEL: str = "gpt-4-vision-preview"
