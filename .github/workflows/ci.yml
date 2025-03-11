@@ -45,30 +45,44 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip setuptools wheel
-        echo "Paso 1: Instalando dependencias de testing..."
-        pip install pytest pytest-cov pytest-asyncio pytest-mock pytest-html
+        # Verificar la existencia del script de instalación
+        if [ -f ./scripts/install_dependencies.sh ]; then
+          echo "Usando script de instalación personalizado..."
+          chmod +x ./scripts/install_dependencies.sh
+          ./scripts/install_dependencies.sh
+        else
+          echo "Script de instalación no encontrado, usando fallback..."
+          
+          python -m pip install --upgrade pip setuptools wheel
+          
+          # Instalar OpenAI primero para evitar problemas de dependencias
+          pip install openai==1.12.0
+          
+          # Dependencias de testing
+          pip install pytest pytest-cov pytest-asyncio pytest-mock pytest-html
+          
+          # Dependencias principales
+          pip install fastapi==0.110.0 uvicorn[standard]==0.27.1
+          pip install pydantic==2.10.6 pydantic-settings==2.1.0
+          pip install python-dotenv==1.0.0 python-multipart==0.0.9
+          
+          # Bases de datos y Azure
+          pip install pymongo==4.6.1
+          pip install azure-functions==1.17.0
+          
+          # Instalar pydantic-ai con soporte para OpenAI (ya instalado)
+          pip install 'pydantic-ai[openai]==0.0.30' || pip install 'pydantic-ai-slim[openai]==0.0.30'
+          
+          # Utilidades y bibliotecas de red
+          pip install httpx==0.27.0 requests==2.31.0 aiohttp==3.9.3
+          pip install typing_extensions==4.12.2 certifi==2024.8.30
+        fi
         
-        echo "Paso 2: Instalando dependencias principales..."
-        pip install fastapi==0.110.0 uvicorn[standard]==0.27.1
-        pip install pydantic==2.10.6 pydantic-settings==2.1.0
-        pip install python-dotenv==1.0.0 python-multipart==0.0.9
-        
-        echo "Paso 3: Instalando bibliotecas de bases de datos y Azure..."
-        pip install pymongo==4.6.1
-        # Todavía necesitamos azure-functions para algunas partes del código
-        pip install azure-functions==1.17.0
-        
-        echo "Paso 4: Instalando dependencias de AI..."
-        # Instalamos pydantic-ai con soporte para OpenAI
-        pip install 'pydantic-ai[openai]==0.0.30' || pip install 'pydantic-ai-slim[openai]==0.0.30' || echo "Fallback a instalación básica"
-        pip install openai==1.12.0
-        # Verificar que la instalación incluya las dependencias correctas
+        echo "Verificando dependencias críticas..."
+        echo "- OpenAI:"
+        pip show openai
+        echo "- Pydantic-AI:"
         pip show pydantic-ai || pip show pydantic-ai-slim
-        
-        echo "Paso 5: Instalando utilidades y bibliotecas de red..."
-        pip install httpx==0.27.0 requests==2.31.0 aiohttp==3.9.3
-        pip install typing_extensions==4.12.2 certifi==2024.8.30
         
         echo "Dependencias instaladas:"
         pip list

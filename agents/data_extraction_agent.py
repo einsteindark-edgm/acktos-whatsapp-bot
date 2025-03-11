@@ -1,9 +1,19 @@
-from pydantic_ai import Agent, RunContext
+import os
+from pydantic_ai import Agent, RunContext, models
 from models.dependencies import ExtractorAgentDependencies
 from models.invoice import Invoice, InvoiceItem
 
+# Determinar el modelo a usar según el entorno
+def get_model_for_environment():
+    # Si estamos en un entorno de prueba, usamos TestModel
+    if os.environ.get('PYDANTICAI_ALLOW_MODEL_REQUESTS', 'true').lower() == 'false':
+        print("ExtractionAgent: Usando TestModel para pruebas")
+        return models.TestModel()
+    # Si no, usamos el modelo OpenAI normal
+    return 'openai:gpt-4'
+
 extraction_agent = Agent(
-    'openai:gpt-4',
+    get_model_for_environment(),
     deps_type=ExtractorAgentDependencies,
     result_type=Invoice,
     system_prompt=(

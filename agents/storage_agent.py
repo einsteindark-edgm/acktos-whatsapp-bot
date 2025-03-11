@@ -1,5 +1,6 @@
+import os
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent, RunContext, models
 from models.dependencies import StorageAgentDependencies
 from models.invoice import Invoice
 
@@ -9,8 +10,17 @@ class StorageResult(BaseModel):
     success: bool = Field(description="Indica si la operación fue exitosa")
     message: str = Field(description="Mensaje descriptivo del resultado")
 
+# Determinar el modelo a usar según el entorno
+def get_model_for_environment():
+    # Si estamos en un entorno de prueba, usamos TestModel
+    if os.environ.get('PYDANTICAI_ALLOW_MODEL_REQUESTS', 'true').lower() == 'false':
+        print("StorageAgent: Usando TestModel para pruebas")
+        return models.TestModel()
+    # Si no, usamos el modelo OpenAI normal
+    return 'openai:gpt-4'
+
 storage_agent = Agent(
-    'openai:gpt-4',
+    get_model_for_environment(),
     deps_type=StorageAgentDependencies,
     result_type=StorageResult,
     system_prompt=(
