@@ -4,9 +4,18 @@ set -e  # Detener en caso de error
 
 echo "Ejecutando pruebas de los agentes PydanticAI..."
 
-# Activar entorno virtual si existe
-if [ -d ".venv" ]; then
+# Intentar activar entorno virtual desde varias posibles ubicaciones
+if [ -f ".venv/bin/activate" ]; then
+  echo "Activando entorno virtual desde .venv/bin/activate"
   source .venv/bin/activate
+elif [ -f "venv/bin/activate" ]; then
+  echo "Activando entorno virtual desde venv/bin/activate"
+  source venv/bin/activate
+elif [ -f "env/bin/activate" ]; then
+  echo "Activando entorno virtual desde env/bin/activate"
+  source env/bin/activate
+else
+  echo "No se encontró ningún entorno virtual. Continuando sin activar."
 fi
 
 # Establecer variable para evitar llamadas reales a OpenAI
