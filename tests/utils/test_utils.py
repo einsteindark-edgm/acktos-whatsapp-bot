@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from typing import Dict, Any
 
 # Configurar pytest para tests asíncronos
-pytestmark = pytest.mark.anyio
+# Eliminamos pytestmark para evitar errores y usamos decoradores individuales
 
 # Deshabilitar logs durante pruebas
 logging.disable(logging.CRITICAL)
@@ -34,6 +34,7 @@ sys.modules['app.config'] = MagicMock()
 sys.modules['app.config'].settings = MockSettings
 
 # Crear una versión mockeada de send_whatsapp_message específica para tests
+@pytest.mark.anyio
 @patch('utils.send_whatsapp_message')
 async def test_send_whatsapp_message_success(mock_send, mock_env_variables):
     """Prueba el envío exitoso de mensajes"""
@@ -51,6 +52,7 @@ async def test_send_whatsapp_message_success(mock_send, mock_env_variables):
     assert result == mock_result
     mock_send.assert_called_once_with('+1234567890', 'Test message')
 
+@pytest.mark.anyio
 @patch('utils.send_whatsapp_message')
 async def test_send_whatsapp_message_invalid_phone(mock_send, mock_env_variables):
     """Prueba error con número de teléfono inválido"""
@@ -64,6 +66,7 @@ async def test_send_whatsapp_message_invalid_phone(mock_send, mock_env_variables
     with pytest.raises(ValueError, match="Número de teléfono inválido"):
         await send_whatsapp_message('invalid_number', 'Test message')
 
+@pytest.mark.anyio
 @patch('utils.send_whatsapp_message')
 async def test_send_whatsapp_message_empty_message(mock_send, mock_env_variables):
     """Prueba error con mensaje vacío"""
@@ -77,6 +80,7 @@ async def test_send_whatsapp_message_empty_message(mock_send, mock_env_variables
     with pytest.raises(ValueError, match="El mensaje no puede estar vacío"):
         await send_whatsapp_message('+1234567890', '')
 
+@pytest.mark.anyio
 @patch('utils.send_whatsapp_message')
 async def test_send_whatsapp_message_api_error(mock_send, mock_env_variables):
     """Prueba error en la API de WhatsApp"""
