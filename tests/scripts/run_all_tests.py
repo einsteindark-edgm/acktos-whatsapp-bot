@@ -68,7 +68,7 @@ def main():
         (os.path.join(base_dir, "tests", "app", "routers", "test_webhook.py"), "Prueba del webhook de FastAPI", ["fastapi"]),
         
         # Pruebas específicas de agentes (usadas también por CI)
-        (os.path.join(base_dir, "tests", "agents", "test_vision_agent.py"), "Prueba específica del agente de visión", ["pydantic_ai"]),
+        (os.path.join(base_dir, "tests", "agents", "test_agent_vision.py"), "Prueba específica del agente de visión", ["pydantic_ai"]),
         
         # Pruebas unitarias
         (os.path.join(base_dir, "tests", "unit", "agents", "test_vision_agent.py"), "Prueba unitaria del agente de visión", ["pydantic_ai"])
