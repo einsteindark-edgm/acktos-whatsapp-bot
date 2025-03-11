@@ -3,7 +3,7 @@ import sys
 import json
 import logging
 import requests
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 from typing import Dict, Any
 
 # Configurar pytest para tests asíncronos
@@ -35,7 +35,7 @@ sys.modules['app.config'].settings = MockSettings
 
 # Crear una versión mockeada de send_whatsapp_message específica para tests
 @pytest.mark.anyio
-@patch('utils.send_whatsapp_message')
+@patch('utils.send_whatsapp_message', new_callable=AsyncMock)
 async def test_send_whatsapp_message_success(mock_send, mock_env_variables):
     """Prueba el envío exitoso de mensajes"""
     # Configurar el comportamiento del mock
@@ -53,7 +53,7 @@ async def test_send_whatsapp_message_success(mock_send, mock_env_variables):
     mock_send.assert_called_once_with('+1234567890', 'Test message')
 
 @pytest.mark.anyio
-@patch('utils.send_whatsapp_message')
+@patch('utils.send_whatsapp_message', new_callable=AsyncMock)
 async def test_send_whatsapp_message_invalid_phone(mock_send, mock_env_variables):
     """Prueba error con número de teléfono inválido"""
     # Configurar el mock para lanzar la excepción
@@ -67,7 +67,7 @@ async def test_send_whatsapp_message_invalid_phone(mock_send, mock_env_variables
         await send_whatsapp_message('invalid_number', 'Test message')
 
 @pytest.mark.anyio
-@patch('utils.send_whatsapp_message')
+@patch('utils.send_whatsapp_message', new_callable=AsyncMock)
 async def test_send_whatsapp_message_empty_message(mock_send, mock_env_variables):
     """Prueba error con mensaje vacío"""
     # Configurar el mock para lanzar la excepción
@@ -81,7 +81,7 @@ async def test_send_whatsapp_message_empty_message(mock_send, mock_env_variables
         await send_whatsapp_message('+1234567890', '')
 
 @pytest.mark.anyio
-@patch('utils.send_whatsapp_message')
+@patch('utils.send_whatsapp_message', new_callable=AsyncMock)
 async def test_send_whatsapp_message_api_error(mock_send, mock_env_variables):
     """Prueba error en la API de WhatsApp"""
     # Configurar el mock para lanzar la excepción
