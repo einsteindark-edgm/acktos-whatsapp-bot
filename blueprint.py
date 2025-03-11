@@ -1,4 +1,3 @@
-import azure.functions as func
 import logging
 import json
 import os
@@ -8,9 +7,72 @@ from agents.data_extraction_agent import extraction_agent
 from agents.storage_agent import storage_agent
 from models.dependencies import VisionAgentDependencies, ExtractorAgentDependencies, StorageAgentDependencies
 from providers.vision.openai_provider import OpenAIVisionProvider
-from providers.storage.cosmosdb_provider import CosmosDBProvider
+from providers.storage.mongodb_provider import MongoDBProvider
+
+# Definición de clases para la API independiente de Azure
+class HttpResponse:
+    def __init__(self, body=None, status_code=200, headers=None):
+        self.body = body if body else ''
+        if isinstance(self.body, str):
+            self.body = self.body.encode('utf-8')
+        self.status_code = status_code
+        self.headers = headers or {}
+    
+    def get_body(self):
+        return self.body
+
+class Blueprint:
+    def __init__(self):
+        self.functions = []
+        self.routes = {}
+    
+    def function_name(self, name):
+        def decorator(f):
+            return f
+        return decorator
+    
+    def route(self, route, methods, auth_level=None):
+        def decorator(f):
+            self.routes[route] = {
+                'handler': f,
+                'methods': methods
+            }
+            return f
+        return decorator
+
+# Para mantener compatibilidad con el código existente
+class func:
+    Blueprint = Blueprint
+    HttpResponse = HttpResponse
+    
+    class AuthLevel:
+        ANONYMOUS = 'anonymous'
+        FUNCTION = 'function'
+    
+    class HttpRequest:
+        def __init__(self, method='GET', url='', params=None, body=None, headers=None):
+            self.method = method
+            self.url = url
+            self.params = params or {}
+            self._body = body
+            self.headers = headers or {}
+        
+        def get_body(self):
+            return self._body if self._body else b''
+        
+        def get_json(self):
+            if not self._body:
+                return {}
+            return json.loads(self._body.decode('utf-8'))
 
 bp = func.Blueprint()
+
+# Crea una asyn for llamar a get_image_from_whatsapp para mantener la compatibilidad
+async def get_image_from_whatsapp(message):
+    # Implementación para obtener la imagen de WhatsApp
+    # En un entorno real se recuperaría la imagen desde la API de WhatsApp
+    # Para pruebas, simplemente devolvemos datos ficticios
+    return b'dummy_image_data'
 
 def handle_webhook(req: func.HttpRequest) -> func.HttpResponse:
     """Función principal que maneja las solicitudes del webhook"""
@@ -102,8 +164,8 @@ async def handle_messages(req: func.HttpRequest) -> func.HttpResponse:
                                 )
                                 
                                 storage_deps = StorageAgentDependencies(
-                                    storage_provider=CosmosDBProvider(
-                                        connection_string=os.environ["COSMOSDB_CONNECTION_STRING"]
+                                    storage_provider=MongoDBProvider(
+                                        connection_string=os.environ["MONGO_CONNECTION_STRING"]
                                     )
                                 )
                                 

@@ -32,13 +32,13 @@ def main():
     
     # Lista de pruebas a ejecutar
     tests = [
-        ("check_deps.py", "Verificación de dependencias"),
-        ("mock_test.py", "Prueba de mocks y dependencias"),
-        ("test_extraction_agent.py", "Prueba del agente de extracción de datos"),
-        ("test_vision_agent.py", "Prueba del agente de visión"),
-        ("test_storage_agent.py", "Prueba del agente de almacenamiento"),
-        ("test_vision_extraction_e2e.py", "Prueba end-to-end de visión y extracción"),
-        ("tests/app/routers/test_webhook.py", "Prueba del webhook de FastAPI")
+        ("../manual/check_deps.py", "Verificación de dependencias"),
+        ("../manual/mock_test.py", "Prueba de mocks y dependencias"),
+        ("../manual/test_extraction_agent.py", "Prueba del agente de extracción de datos"),
+        ("../manual/test_vision_agent.py", "Prueba del agente de visión"),
+        ("../manual/test_storage_agent.py", "Prueba del agente de almacenamiento"),
+        ("../integration/test_vision_extraction_e2e.py", "Prueba end-to-end de visión y extracción"),
+        ("../app/routers/test_webhook.py", "Prueba del webhook de FastAPI")
     ]
     
     # Ejecutar todas las pruebas

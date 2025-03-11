@@ -14,9 +14,8 @@ pip install fastapi==0.110.0 uvicorn[standard]==0.27.1
 pip install pydantic==2.10.6 pydantic-settings==2.1.0
 pip install python-dotenv==1.0.0 python-multipart==0.0.9
 
-echo "===== Instalando bibliotecas de bases de datos y Azure ====="
+echo "===== Instalando biblioteca de MongoDB ====="
 pip install pymongo==4.6.1
-pip install azure-functions==1.17.0
 
 echo "===== Instalando OpenAI ====="
 pip install openai==1.12.0

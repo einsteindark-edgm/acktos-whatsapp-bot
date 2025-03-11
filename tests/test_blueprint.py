@@ -1,6 +1,6 @@
 import pytest
 import json
-import azure.functions as func
+from tests.conftest import MockHttpResponse
 from blueprint import handle_webhook, handle_verification, handle_messages
 
 def test_webhook_verification_success(mock_env_variables, mock_http_request):
@@ -12,7 +12,7 @@ def test_webhook_verification_success(mock_env_variables, mock_http_request):
     }
     req = mock_http_request(params=params)
     response = handle_webhook(req)
-    assert isinstance(response, func.HttpResponse)
+    assert isinstance(response, MockHttpResponse)
     
     assert response.status_code == 200
     assert response.get_body().decode() == 'test_challenge'
@@ -26,7 +26,7 @@ def test_webhook_verification_failed_token(mock_env_variables, mock_http_request
     }
     req = mock_http_request(params=params)
     response = handle_webhook(req)
-    assert isinstance(response, func.HttpResponse)
+    assert isinstance(response, MockHttpResponse)
     
     assert response.status_code == 403
 
@@ -62,7 +62,7 @@ def test_webhook_message_received(mock_env_variables, mock_http_request, mocker)
     
     req = mock_http_request(method='POST', body=body)
     response = handle_webhook(req)
-    assert isinstance(response, func.HttpResponse)
+    assert isinstance(response, MockHttpResponse)
     
     assert response.status_code == 200
     mock_send.assert_called_once_with(
@@ -74,6 +74,6 @@ def test_webhook_invalid_method(mock_http_request):
     """Prueba método no soportado"""
     req = mock_http_request(method='PUT')
     response = handle_webhook(req)
-    assert isinstance(response, func.HttpResponse)
+    assert isinstance(response, MockHttpResponse)
     
     assert response.status_code == 405

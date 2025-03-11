@@ -3,6 +3,11 @@ import sys
 import asyncio
 from datetime import datetime
 from typing import Dict, Any, List, Optional
+from pathlib import Path
+
+# Añadir el directorio raíz del proyecto al PATH de Python
+root_dir = str(Path(__file__).parent.parent.parent.absolute())
+sys.path.insert(0, root_dir)
 
 # Configurar variables de entorno necesarias
 os.environ['OPENAI_API_KEY'] = 'dummy_key'

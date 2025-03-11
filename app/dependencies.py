@@ -3,7 +3,7 @@ from typing import Annotated, Generator
 
 from app.config import settings
 from providers.vision.openai_provider import OpenAIVisionProvider
-from providers.storage.cosmosdb_provider import CosmosDBProvider
+from providers.storage.mongodb_provider import MongoDBProvider
 from models.dependencies import VisionAgentDependencies, StorageAgentDependencies, ExtractorAgentDependencies
 
 # Vision Provider
@@ -12,9 +12,9 @@ def get_vision_provider() -> OpenAIVisionProvider:
     return OpenAIVisionProvider()
 
 # Storage Provider
-def get_storage_provider() -> CosmosDBProvider:
+def get_storage_provider() -> MongoDBProvider:
     """Proporciona el proveedor de almacenamiento"""
-    return CosmosDBProvider(connection_string=settings.COSMOSDB_CONNECTION_STRING)
+    return MongoDBProvider(connection_string=settings.MONGO_CONNECTION_STRING)
 
 # Dependencias para agentes
 def get_vision_deps(
@@ -28,7 +28,7 @@ def get_vision_deps(
     )
 
 def get_storage_deps(
-    storage_provider: Annotated[CosmosDBProvider, Depends(get_storage_provider)]
+    storage_provider: Annotated[MongoDBProvider, Depends(get_storage_provider)]
 ) -> StorageAgentDependencies:
     """Proporciona las dependencias para el agente de almacenamiento"""
     return StorageAgentDependencies(

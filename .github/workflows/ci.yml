@@ -21,9 +21,8 @@ jobs:
       WHATSAPP_TOKEN: test_token
       WHATSAPP_PHONE_NUMBER_ID: '123456'
       WHATSAPP_VERIFY_TOKEN_WEBHOOK: test_webhook
-      # Compatibilidad con ambas variables de conexión a bases de datos
+      # Conexión a MongoDB para testing
       MONGO_CONNECTION_STRING: mongodb://localhost:27017
-      COSMOSDB_CONNECTION_STRING: mongodb://localhost:27017
 
     steps:
     - name: Checkout repository
@@ -66,9 +65,8 @@ jobs:
           pip install pydantic==2.10.6 pydantic-settings==2.1.0
           pip install python-dotenv==1.0.0 python-multipart==0.0.9
           
-          # Bases de datos y Azure
+          # Base de datos MongoDB
           pip install pymongo==4.6.1
-          pip install azure-functions==1.17.0
           
           # Instalar pydantic-ai con soporte para OpenAI (ya instalado)
           pip install 'pydantic-ai[openai]==0.0.30' || pip install 'pydantic-ai-slim[openai]==0.0.30'
