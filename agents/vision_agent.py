@@ -17,8 +17,10 @@ def get_model_for_environment():
     if os.environ.get('PYDANTICAI_ALLOW_MODEL_REQUESTS', 'true').lower() == 'false':
         print("VisionAgent: Usando TestModel para pruebas")
         return TestModel()
-    # Si no, usamos el modelo OpenAI normal
-    return 'openai:gpt-4-vision'
+    # Si no, usamos un modelo OpenAI con capacidades de visión
+    # gpt-4o es el modelo actual con capacidades de visión
+    print("VisionAgent: Utilizando modelo OpenAI gpt-4o")
+    return 'openai:gpt-4o'
 
 vision_agent = Agent(
     get_model_for_environment(),
@@ -33,24 +35,34 @@ vision_agent = Agent(
 
 @vision_agent.tool
 async def process_invoice_image(
-    ctx: RunContext[VisionAgentDependencies],
-    image_data: bytes
+    ctx: RunContext[VisionAgentDependencies]
 ) -> VisionResult:
     """
     Procesa una imagen de factura y extrae su contenido.
     
     Args:
-        ctx: Contexto de ejecución con dependencias
-        image_data: Datos binarios de la imagen
+        ctx: Contexto de ejecución con dependencias que incluye la imagen
         
     Returns:
         VisionResult: Resultado del procesamiento de la imagen
     """
+    # Obtener la imagen de las dependencias
+    if not ctx.deps.image_data:
+        raise ValueError("No se proporcionó imagen para procesar")
+    
+    # Agregar logs detallados para depuración
+    print(f"VisionAgent: Procesando imagen de {len(ctx.deps.image_data)} bytes")
+    print(f"VisionAgent: Usando modelo {ctx.deps.model_name}")
+    print(f"VisionAgent: API key configurada: {bool(ctx.deps.api_key)}")
+        
     result = await ctx.deps.vision_provider.process_image(
-        image_data=image_data,
+        image_data=ctx.deps.image_data,
         model_name=ctx.deps.model_name,
         api_key=ctx.deps.api_key
     )
+    
+    # Log del resultado
+    print(f"VisionAgent: Texto extraído: {len(result['extracted_text'])} caracteres")
     
     return VisionResult(
         extracted_text=result["extracted_text"],

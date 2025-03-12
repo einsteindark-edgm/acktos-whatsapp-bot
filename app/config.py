@@ -28,7 +28,7 @@ class Settings(BaseSettings):
         return v
     
     # Modelos AI
-    VISION_MODEL: str = "gpt-4-vision-preview"
+    VISION_MODEL: str = "gpt-4o"
     EXTRACTION_MODEL: str = "gpt-4"
     
     @computed_field

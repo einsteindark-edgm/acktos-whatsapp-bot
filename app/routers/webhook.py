@@ -153,11 +153,31 @@ async def process_image(message: dict, from_number: str, vision_deps, extractor_
         
         # 2. Procesar con Vision Agent
         logging.info("Iniciando extracción de texto con Vision Agent")
-        vision_result = await vision_agent.run(
-            "Extract text from this invoice",
-            deps=vision_deps,
-            files={"image": image_data}
-        )
+        
+        try:
+            # Agregar la imagen a las dependencias
+            logging.info(f"Tamaño de la imagen: {len(image_data)} bytes")
+            
+            # Verificar que vision_deps tenga los valores correctos antes de la llamada
+            logging.info(f"Vision provider: {vision_deps.vision_provider.__class__.__name__}")
+            logging.info(f"Model name: {vision_deps.model_name}")
+            logging.info(f"API key configurada: {bool(vision_deps.api_key)}")
+            
+            # Crear un objeto de dependencias con la imagen incluida
+            vision_deps.image_data = image_data
+            logging.info("Imagen agregada a las dependencias correctamente")
+            
+            # Llamar al vision_agent con un prompt simple, el agente usará la herramienta process_invoice_image
+            logging.info("Iniciando llamada a vision_agent.run()...")
+            vision_result = await vision_agent.run(
+                "Procesa esta imagen de factura y extrae todo su texto",
+                deps=vision_deps
+            )
+            
+            logging.info("Vision agent ejecutado correctamente")
+        except Exception as e:
+            logging.error(f"Error en vision_agent: {str(e)}")
+            raise
         logging.info(f"Texto extraído: {len(vision_result.data.extracted_text)} caracteres")
         
         # 3. Extraer datos estructurados

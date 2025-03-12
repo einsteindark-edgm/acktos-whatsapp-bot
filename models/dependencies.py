@@ -8,6 +8,7 @@ class VisionAgentDependencies:
     vision_provider: VisionProvider
     model_name: str
     api_key: str
+    image_data: bytes = None  # Campo para almacenar la imagen a procesar
 
 @dataclass
 class StorageAgentDependencies:
