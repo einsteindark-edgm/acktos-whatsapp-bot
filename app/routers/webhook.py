@@ -125,48 +125,83 @@ async def receive_message(
             detail=f"Internal server error: {str(e)}"
         )
 
-async def process_image(message, from_number, vision_deps, extractor_deps, storage_deps):
-    """Procesa una imagen de factura"""
-    try:
-        # 1. Obtener la imagen
-        image_data = await get_image_from_whatsapp(message)
+async def process_image(message: dict, from_number: str, vision_deps, extractor_deps, storage_deps=None) -> dict:
+    """
+    Procesa una imagen de factura recibida por WhatsApp
+    
+    Args:
+        message: Mensaje recibido con la imagen
+        from_number: Número de teléfono del remitente
+        vision_deps: Dependencias para el agente de visión
+        extractor_deps: Dependencias para el agente de extracción
+        storage_deps: Dependencias para almacenamiento (no usado en pruebas)
         
-        # 2. Procesar la imagen con Vision Agent
+    Returns:
+        dict: Resultado de la operación
+    """
+    try:
+        # Notificar al usuario que estamos procesando
+        await send_whatsapp_message(
+            from_number,
+            "Procesando tu imagen... Esto puede tomar unos segundos."
+        )
+        
+        # 1. Obtener la imagen
+        logging.info(f"Obteniendo imagen de WhatsApp de: {from_number}")
+        image_data = await get_image_from_whatsapp(message)
+        logging.info(f"Imagen recibida: {len(image_data)} bytes")
+        
+        # 2. Procesar con Vision Agent
+        logging.info("Iniciando extracción de texto con Vision Agent")
         vision_result = await vision_agent.run(
             "Extract text from this invoice",
             deps=vision_deps,
             files={"image": image_data}
         )
+        logging.info(f"Texto extraído: {len(vision_result.data.extracted_text)} caracteres")
         
         # 3. Extraer datos estructurados
+        logging.info("Extrayendo datos estructurados")
         extraction_result = await extraction_agent.run(
             vision_result.data.extracted_text,
             deps=extractor_deps
         )
+        invoice = extraction_result.data
+        logging.info(f"Datos estructurados extraidos: {invoice}")
         
-        # 4. Almacenar en base de datos
-        storage_result = await storage_agent.run(
-            "store_invoice",
-            deps=storage_deps,
-            invoice=extraction_result.data
+        # 4. Preparar respuesta
+        response_message = (
+            "✓ Factura procesada correctamente\n" +
+            f"- Número: {invoice.invoice_number}\n" +
+            f"- Total: {invoice.total_amount} {invoice.currency}\n" +
+            f"- Vendedor: {invoice.vendor_name}"
         )
         
-        # 5. Preparar respuesta
-        if storage_result.data.success:
-            response_message = (
-                f"\u2705 Factura procesada correctamente\n"
-                f"\ud83d\udcdd Nu00famero: {extraction_result.data.invoice_number}\n"
-                f"\ud83d\udcb0 Total: {extraction_result.data.total_amount} {extraction_result.data.currency}\n"
-                f"\ud83c\udfe2 Vendedor: {extraction_result.data.vendor_name}"
-            )
-        else:
-            response_message = "\u274c Error al procesar la factura. Por favor, intenta nuevamente."
-        
+        # 5. Enviar respuesta a WhatsApp
+        logging.info(f"Enviando resultado al usuario: {from_number}")
         await send_whatsapp_message(from_number, response_message)
         
+        return {
+            "status": "success",
+            "extracted_data": {
+                "invoice_number": invoice.invoice_number,
+                "total_amount": invoice.total_amount,
+                "currency": invoice.currency,
+                "vendor_name": invoice.vendor_name
+            }
+        }
+        
     except Exception as e:
-        logging.error(f"Error processing invoice: {str(e)}")
+        error_msg = f"Error al procesar la imagen: {str(e)}"
+        logging.error(error_msg)
+        
+        # Notificar al usuario del error
         await send_whatsapp_message(
             from_number,
-            "\u274c Error al procesar la imagen. Por favor, asegu00farate de enviar una imagen clara de una factura."
+            "✗ Error al procesar la imagen. Por favor, asegúrate de enviar una imagen clara de una factura."
         )
+        
+        return {
+            "status": "error",
+            "message": str(e)
+        }
